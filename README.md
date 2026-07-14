@@ -7,8 +7,7 @@ reports using the Gemini API.
 ## Live Demo
 
 - Backend API: https://worldcup-predictor-16sf.onrender.com
-- Frontend: (add your GitHub Pages link once live)
-
+- Frontend: https://divishaagarwal3006-maker.github.io/worldcup-predictor/
 ## How it works
 
 1. **Data** — historical international match results + team rankings (`data/`).
