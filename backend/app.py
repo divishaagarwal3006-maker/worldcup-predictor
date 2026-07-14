@@ -19,13 +19,15 @@ app.add_middleware(
 _clf = None
 _rankings = None
 _matches = None
+_ready = False  # explicit readiness flag, independent of what load_model() returns
 
 
 @app.on_event("startup")
 def load_artifacts():
-    global _clf, _rankings, _matches
+    global _clf, _rankings, _matches, _ready
     _clf, _rankings = load_model()
     _matches, _ = load_data()
+    _ready = _rankings is not None  # readiness = rankings loaded, not clf truthiness
 
 
 class MatchRequest(BaseModel):
@@ -41,19 +43,19 @@ class TournamentRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model_loaded": _clf is not None}
+    return {"status": "ok", "model_loaded": _ready}
 
 
 @app.get("/teams")
 def list_teams():
-    if _rankings is None:
+    if not _ready:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
     return {"teams": sorted(_rankings.keys())}
 
 
 @app.post("/predict-match")
 def predict_single_match(req: MatchRequest):
-    if _clf is None:
+    if not _ready:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
     probs = predict_match(_clf, _rankings, req.team_a, req.team_b, matches=_matches)
     return {
@@ -67,7 +69,7 @@ def predict_single_match(req: MatchRequest):
 
 @app.post("/simulate-tournament")
 def simulate_tournament(req: TournamentRequest):
-    if _clf is None:
+    if not _ready:
         raise HTTPException(status_code=503, detail="Model not loaded yet")
     all_teams = [t for group in req.groups.values() for t in group]
     unknown = [t for t in all_teams if t not in _rankings]
