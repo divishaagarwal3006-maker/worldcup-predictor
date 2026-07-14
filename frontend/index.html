@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>World Cup Predictor</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; }
+  select, button { padding: 8px; margin: 5px; }
+  #result { margin-top: 20px; font-size: 18px; }
+</style>
+</head>
+<body>
+  <h1>🏆 World Cup Predictor</h1>
+  <select id="teamA"></select>
+  vs
+  <select id="teamB"></select>
+  <button onclick="predict()">Predict</button>
+  <div id="result"></div>
+
+<script>
+const API = "http://localhost:8000";
+
+async function loadTeams() {
+  const res = await fetch(`${API}/teams`);
+  const data = await res.json();
+  const a = document.getElementById("teamA");
+  const b = document.getElementById("teamB");
+  data.teams.forEach(t => {
+    a.innerHTML += `<option value="${t}">${t}</option>`;
+    b.innerHTML += `<option value="${t}">${t}</option>`;
+  });
+}
+
+async function predict() {
+  const team_a = document.getElementById("teamA").value;
+  const team_b = document.getElementById("teamB").value;
+  const res = await fetch(`${API}/predict-match`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ team_a, team_b })
+  });
+  const data = await res.json();
+  document.getElementById("result").innerHTML =
+    `${team_a}: ${(data.team_a_win_probability*100).toFixed(1)}% | 
+     Draw: ${(data.draw_probability*100).toFixed(1)}% | 
+     ${team_b}: ${(data.team_b_win_probability*100).toFixed(1)}%`;
+}
+
+loadTeams();
+</script>
+</body>
+</html>
